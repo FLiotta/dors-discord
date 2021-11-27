@@ -2,8 +2,8 @@ import os
 from typing import Any, List, Sequence, Dict
 
 import disnake
+from disnake import Option
 from disnake.ext import commands
-from disnake.ext.commands import slash_core
 
 import config
 
@@ -47,15 +47,15 @@ class DorsDiscord(commands.Bot):
             if not (handler := getattr(func, '__handler', False)) or not (data := getattr(func, '__data', False)):
                 continue
             if handler == "slash_command":
-                slash_cmd = slash_core.slash_command(**data)(func)
-                self.add_slash_command(slash_cmd)
+                slash_cmd = self.slash_command(**data)(func)
+                # self.add_slash_command(slash_cmd)
 
 
 def slash_command(
     *,
     name: str = None,
     description: str = None,
-    options: List[disnake.app_commands.Option] = None,
+    options: List[Option] = None,
     default_permission: bool = True,
     guild_ids: Sequence[int] = None,
     connectors: Dict[str, str] = None,

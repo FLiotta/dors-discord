@@ -34,6 +34,7 @@ async def btcprice(interaction: ApplicationCommandInteraction):
             )
 
     options.add_argument(f"user-data-dir={os.getcwd()}/chrome")
+    options.add_argument(f"--headless")
     driver = webdriver.Chrome(options=options)
     driver.request_interceptor = interceptor
     driver.get("https://in.tradingview.com/chart/?symbol=BTCUSD")
@@ -49,7 +50,7 @@ async def btcprice(interaction: ApplicationCommandInteraction):
 
     ActionChains(driver).key_down(Keys.ALT).send_keys('s').perform()
 
-    request = driver.wait_for_request("https://in.tradingview.com/snapshot/", timeout=120)
+    request = driver.wait_for_request("https://in.tradingview.com/snapshot/")
 
     s = request.body.split(b"\r")[0][2:]
     p = multipart.MultipartParser(BytesIO(request.body), s)

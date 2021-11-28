@@ -4,6 +4,7 @@ from typing import Any, List, Sequence, Dict
 import disnake
 from disnake import Option
 from disnake.ext import commands
+from disnake.ext.commands import slash_core, InvokableSlashCommand
 
 import config
 
@@ -44,35 +45,11 @@ class DorsDiscord(commands.Bot):
 
         funcs = [f for _, f in themodule.__dict__.items() if callable(f)]
         for func in funcs:
-            if not (handler := getattr(func, '__handler', False)) or not (data := getattr(func, '__data', False)):
-                continue
-            if handler == "slash_command":
-                slash_cmd = self.slash_command(**data)(func)
-                # self.add_slash_command(slash_cmd)
+            # if not (handler := getattr(func, '__handler', False)) or not (data := getattr(func, '__data', False)):
+            #     continue
+            if isinstance(func, InvokableSlashCommand):
+                # slash_cmd = self.slash_command(**data)(func)
+                self.add_slash_command(func)
 
 
-def slash_command(
-    *,
-    name: str = None,
-    description: str = None,
-    options: List[Option] = None,
-    default_permission: bool = True,
-    guild_ids: Sequence[int] = None,
-    connectors: Dict[str, str] = None,
-    auto_sync: bool = True,
-    **kwargs
-):
-    def wrap(func):
-        func.__handler = 'slash_command'
-        func.__data = {
-            'name': name,
-            'description': description,
-            'options': options,
-            'default_permission': default_permission,
-            'guild_ids': guild_ids,
-            'connectors': connectors,
-            'auto_sync': auto_sync,
-            **kwargs
-        }
-        return func
-    return wrap
+slash_command = slash_core.slash_command

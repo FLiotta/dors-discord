@@ -1,66 +1,49 @@
-import os
-import time
 from io import BytesIO
 
-import multipart
+import aiohttp
 from disnake import ApplicationCommandInteraction, File
-from selenium.common.exceptions import NoSuchElementException
-
-from seleniumwire import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
 
 from dors import slash_command
 
 
-@slash_command(name="btc", description="Precio del bitcoin")
-async def btcprice(interaction: ApplicationCommandInteraction):
-    await interaction.response.defer()
-    options = webdriver.ChromeOptions()
-    try:
-        os.mkdir(f"{os.getcwd()}/chrome")
-    except FileExistsError:
-        pass
+async def do_ticker(interaction: ApplicationCommandInteraction, symbol):
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://api.chart-img.com/v1/tradingview/advanced-chart", params={
+            "height": 400,
+            "interval": "1h",
+            "symbol": symbol
+        }) as resp:
+            buffer = BytesIO(await resp.read())
 
-    def interceptor(request):  # A response interceptor takes two args
-        if request.url == 'https://in.tradingview.com/snapshot/':
-            data = request.body
-
-            request.create_response(
-                status_code=200,
-                headers={'Content-Type': 'image/png'},  # Optional headers dictionary
-                body=data  # Optional body
-            )
-
-    options.add_argument(f"user-data-dir={os.getcwd()}/chrome")
-    options.add_argument(f"--headless")
-    driver = webdriver.Chrome(options=options)
-    driver.request_interceptor = interceptor
-    driver.get("https://in.tradingview.com/chart/?symbol=BTCUSD")
-
-    driver.maximize_window()
-    driver.execute_script('window.localStorage.setItem("tradingview.current_theme.name", "dark")')
-
-    # Close Sales and shit
-    try:
-        driver.find_element(By.CLASS_NAME, "js-dialog__close").click()
-    except NoSuchElementException:
-        pass
-
-    ActionChains(driver).key_down(Keys.ALT).send_keys('s').perform()
-
-    request = driver.wait_for_request("https://in.tradingview.com/snapshot/")
-
-    s = request.body.split(b"\r")[0][2:]
-    p = multipart.MultipartParser(BytesIO(request.body), s)
-    imag = None
-    for part in p.parts():
-        if part.name == "preparedImage":
-            imag = part.raw
-
-    streamerino = BytesIO(imag)
-    driver.close()
-
-    file = File(streamerino, filename="graph.png")
+    file = File(buffer, filename="graph.png")
     await interaction.followup.send(file=file)
+
+
+@slash_command()
+async def tradingview(interaction: ApplicationCommandInteraction):
+    """ La pantallita de tradingview para tu shitcoin favorita """
+    await interaction.response.defer()
+
+
+@tradingview.sub_command()
+async def btc(interaction: ApplicationCommandInteraction):
+    """ Bitcoin """
+    await do_ticker(interaction, "BTCUSD")
+
+
+@tradingview.sub_command()
+async def eth(interaction: ApplicationCommandInteraction):
+    """ Ethereum """
+    await do_ticker(interaction, "ETHUSD")
+
+
+@tradingview.sub_command()
+async def bnb(interaction: ApplicationCommandInteraction):
+    """ BNB """
+    await do_ticker(interaction, "BNBUSD")
+
+
+@tradingview.sub_command()
+async def doge(interaction: ApplicationCommandInteraction):
+    """ Perrocoin """
+    await do_ticker(interaction, "DOGEUSD")

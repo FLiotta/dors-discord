@@ -9,6 +9,14 @@ from disnake.ext.commands import slash_core, InvokableSlashCommand
 import config
 
 
+class OnLoadHook:
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        self.func(*args, **kwargs)
+
+
 class DorsDiscord(commands.Bot):
     def __init__(self, **options: Any):
         super().__init__(**options)
@@ -45,11 +53,17 @@ class DorsDiscord(commands.Bot):
 
         funcs = [f for _, f in themodule.__dict__.items() if callable(f)]
         for func in funcs:
-            # if not (handler := getattr(func, '__handler', False)) or not (data := getattr(func, '__data', False)):
-            #     continue
             if isinstance(func, InvokableSlashCommand):
-                # slash_cmd = self.slash_command(**data)(func)
                 self.add_slash_command(func)
+            elif isinstance(func, OnLoadHook):
+                func.func(self)
 
 
 slash_command = slash_core.slash_command
+
+
+def on_load():
+    def decorator(func):
+        return OnLoadHook(func)
+
+    return decorator

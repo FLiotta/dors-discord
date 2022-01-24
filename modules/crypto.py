@@ -4,6 +4,7 @@ import aiohttp
 from disnake import ApplicationCommandInteraction, File
 from disnake.ext import commands
 
+import config
 from dors import slash_command
 
 
@@ -21,7 +22,8 @@ async def tradingview(
         async with session.get("https://api.chart-img.com/v1/tradingview/advanced-chart", params={
             "height": 400,
             "interval": "1h",
-            "symbol": symbol
+            "symbol": symbol,
+            "key": config.chartimg_api_key
         }) as resp:
             buffer = BytesIO(await resp.read())
 

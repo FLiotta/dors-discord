@@ -2,14 +2,14 @@ import os
 from typing import Any, List, Sequence, Dict
 
 import disnake
-from disnake import Option
+from disnake import Option, Message, Intents
 from disnake.ext import commands
 from disnake.ext.commands import slash_core, InvokableSlashCommand
 
 import config
 
 
-class OnLoadHook:
+class BaseHook:
     def __init__(self, func):
         self.func = func
 
@@ -17,11 +17,20 @@ class OnLoadHook:
         self.func(*args, **kwargs)
 
 
+class OnLoadHook(BaseHook):
+    pass
+
+
+class OnMessageHook(BaseHook):
+    pass
+
+
 class DorsDiscord(commands.Bot):
     def __init__(self, **options: Any):
         super().__init__(**options)
 
         self.plugins = {}
+        self.message_hooks = []
 
         modules = []
         whitelistonly = False
@@ -57,13 +66,26 @@ class DorsDiscord(commands.Bot):
                 self.add_slash_command(func)
             elif isinstance(func, OnLoadHook):
                 func.func(self)
+            elif isinstance(func, OnMessageHook):
+                self.message_hooks.append(func)
+
+    async def on_message(self, message: Message) -> None:
+        print(f'> <{message.author}>: {message.content}')
+        for func in self.message_hooks:
+            await func.func(self, message)
 
 
 slash_command = slash_core.slash_command
 
-
 def on_load():
     def decorator(func):
         return OnLoadHook(func)
+
+    return decorator
+
+
+def on_message():
+    def decorator(func):
+        return OnMessageHook(func)
 
     return decorator

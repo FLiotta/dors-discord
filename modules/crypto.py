@@ -8,7 +8,7 @@ import config
 from dors import slash_command
 
 
-allowed_symbols = ['BTCUSD', 'ETHUSD', 'DOGEUSDT', 'BNBUSDT', 'DOTUSDT']
+allowed_symbols = ['BTCUSD', 'ETHUSD', 'DOGEUSDT', 'BNBUSDT', 'DOTUSDT', 'USDTARS']
 
 
 @slash_command()

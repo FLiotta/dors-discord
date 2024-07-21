@@ -5,44 +5,54 @@ from dors import slash_command
 # Command related modules
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-import time
 from typing import List, Tuple
 
-WIDTH = 270
-HEIGHT = 300
+WIDTH = 300
+HEIGHT = 270
 FRAMES = 229
 FONT_COLOR = "#FFF"
 FONT = ImageFont.truetype("arial.ttf", 20)
 
+PADDING_BOTTOM = 25
+
 
 def break_text_to_canvas(text: str) -> Tuple[str, float]:
+    """
+    Receives a string and returns it with break-line namespaces when it exceeds the image width.
+
+    It also returns text's width
+    """
     parsed_string = ""
     substring_length = 0
-    text_length = 0
+    longest_string_length = 0
 
     for word in text.split(" "):
-        word_length = FONT.getlength(word)
+        word_length = FONT.getlength(word + " ")
 
-        if text_length == 0:
-            text_length = word_length
-
+        # If the next word makes the line exceed the screen width
         if substring_length + word_length > WIDTH:
+            # Break line
             parsed_string += "\n"
 
-            if substring_length > text_length:
-                text_length = substring_length
+            # Check if this line was the biggest one
+            if substring_length > longest_string_length:
+                longest_string_length = substring_length
 
             substring_length = 0
-        else:
-            substring_length += word_length
 
+        # Append the word to the substring
         parsed_string += word + ' '
+        substring_length += word_length
 
-    return parsed_string, text_length
+    # In case there was no longest_string in the loop (one line phrase)
+    if longest_string_length == 0:
+        longest_string_length = FONT.getlength(parsed_string)
+
+    return parsed_string, longest_string_length
+
 
 
 async def create_gif(quotes: List[str]) -> BytesIO:
-    time_start = time.time()
     modified_frames = []
 
     frames_per_quote = round(FRAMES / len(quotes))
@@ -61,7 +71,7 @@ async def create_gif(quotes: List[str]) -> BytesIO:
                 _, _, _, h = draw.textbbox((0, 0), parsed_multiline_text, font=FONT)
                 
                 draw.multiline_text(
-                    xy=((WIDTH - text_width) / 2, HEIGHT - h - 50), 
+                    xy=((WIDTH - text_width) / 2, HEIGHT - h - PADDING_BOTTOM), 
                     text=parsed_multiline_text, 
                     font=FONT, 
                     fill=FONT_COLOR
@@ -82,15 +92,11 @@ async def create_gif(quotes: List[str]) -> BytesIO:
         )
 
     gif_io.seek(0)
-    
-    time_end = time.time()
-
-    print(f"[*] Gif Completed in {int(time_end - time_start)}s")
 
     return gif_io
 
 @slash_command(name="saul", description="Better call saul!")
-async def foo(interaction: ApplicationCommandInteraction, user: User, msg_qty: int = 3):
+async def saul(interaction: ApplicationCommandInteraction, user: User, msg_qty: int = 3):
     channel = interaction.channel
 
     # Fetch the last 100 messages in the channel

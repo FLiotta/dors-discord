@@ -96,11 +96,22 @@ async def create_gif(quotes: List[str]) -> BytesIO:
     return gif_io
 
 @slash_command(name="saul", description="Better call saul!")
-async def saul(interaction: ApplicationCommandInteraction, user: User, msg_qty: int = 3):
-    channel = interaction.channel
+async def saul(
+    interaction: ApplicationCommandInteraction, 
+    user: User, 
+    msg_qty: int = 3,
+    query_after_msg_id: str = ""
+):
+    if msg_qty > 6:
+        await interaction.response.send_message(f"Too many messages, maximum is 6", ephemeral=True)
 
-    # Fetch the last 100 messages in the channel
-    messages = await channel.history(limit=100).flatten()
+    channel = interaction.channel
+    ref_message = None
+
+    if query_after_msg_id:
+        ref_message = await channel.fetch_message(int(query_after_msg_id))
+        
+    messages = await channel.history(limit=100, after=ref_message).flatten()
     
     # Filter messages by the specified user
     user_messages = [msg for msg in messages if msg.author == user]
@@ -110,7 +121,9 @@ async def saul(interaction: ApplicationCommandInteraction, user: User, msg_qty: 
 
     # Get the last messages from the user
     user_messages = user_messages[:msg_qty]
-    user_messages.reverse()
+
+    if not query_after_msg_id:
+        user_messages.reverse()
     
     async with channel.typing():
         gif = await create_gif([msg.content for msg in user_messages])

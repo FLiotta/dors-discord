@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "dors-discord"
+version = "0.1.0"
+description = ""
+authors = ["polsaker"]
+readme = "README.md"
+packages = [{include = "dors_discord"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+disnake = "^2.9.2"
+pillow = "^10.4.0"
+pandas = "^2.2.2"
+matplotlib = "^3.9.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

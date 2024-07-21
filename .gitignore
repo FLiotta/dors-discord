@@ -3,3 +3,5 @@
 config.py
 .python-version
 chrome/
+**/**/__pycache__
+.venv
